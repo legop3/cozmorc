@@ -31,7 +31,7 @@ def on_camera_image(cli, new_im):
 
 # state trackers
 
-# this is only for returning to the browser
+# this is for canceling out repeat keypresses
 key_state = {
     'W': False,
     'A': False,
@@ -41,6 +41,9 @@ key_state = {
     'G': False,
     'R': False,
     'F': False,
+    'ENTER': False,
+    'SHIFT': False
+
 }
 
 
@@ -54,6 +57,12 @@ movement_state = {
     'look_down': False,
     'lift_arm_up': False,
     'lift_arm_down': False
+}
+
+modifiers = {
+    'fast': False,
+    'slow': False,
+    'light': False
 }
 
 
@@ -146,6 +155,23 @@ def stop_looking():
     movement_state['look_down'] = False
     print("Stopping looking direction")
 
+def move_fast():
+    modifiers['fast'] = True
+    print("Moving fast")
+
+def stop_fast():
+    modifiers['fast'] = False
+    print("Stopping fast move")
+
+def move_slow():
+    modifiers['slow'] = True
+    print("Moving slow")
+
+def stop_slow():
+    modifiers['slow'] = False
+    print("Stopping moving slow")
+
+
 
 # Function to handle actions when keys are pressed or released
 def handle_key_action(key, action):
@@ -190,6 +216,16 @@ def handle_key_action(key, action):
                 look_down()
             elif action == 'released':
                 stop_looking()
+        case 'ENTER': # move fast toggle
+            if action == 'pressed' and not modifiers['fast']:
+                move_fast()
+            elif action == 'released':
+                stop_fast()
+        case 'SHIFT': #move slow toggle
+            if action == 'pressed' and not modifiers['slow']:
+                move_slow()
+            elif action == 'released':
+                stop_slow()
         case _:
             print(f"Unknown key: {key}")
 

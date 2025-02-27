@@ -26,7 +26,7 @@
         // Add event listeners for key press and key release
         document.addEventListener('keydown', function(event) {
             // Only handle WASD, TG, RF keys
-            const validKeys = ['W', 'A', 'S', 'D', 'T', 'G', 'R', 'F'];
+            const validKeys = ['W', 'A', 'S', 'D', 'T', 'G', 'R', 'F', 'ENTER', 'SHIFT'];
             if (validKeys.includes(event.key.toUpperCase())) {
                 sendKeyEvent(event.key.toUpperCase(), 'pressed');
             }
@@ -34,7 +34,7 @@
 
         document.addEventListener('keyup', function(event) {
             // Only handle WASD, TG, RF keys
-            const validKeys = ['W', 'A', 'S', 'D', 'T', 'G', 'R', 'F'];
+            const validKeys = ['W', 'A', 'S', 'D', 'T', 'G', 'R', 'F', 'ENTER', 'SHIFT'];
             if (validKeys.includes(event.key.toUpperCase())) {
                 sendKeyEvent(event.key.toUpperCase(), 'released');
             }

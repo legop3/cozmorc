@@ -1,8 +1,8 @@
 import time
 import pycozmo
 from PIL import Image
-from flask import Flask, Response, render_template
-import cv2
+from flask import Flask, Response, render_template, request, jsonify
+import json
 import threading
 import io
 
@@ -29,6 +29,30 @@ def on_camera_image(cli, new_im):
     last_im
 
 
+# state trackers
+
+# this is only for returning to the browser
+key_state = {
+    'W': False,
+    'A': False,
+    'S': False,
+    'D': False,
+    'T': False,
+    'G': False,
+    'R': False,
+    'F': False,
+}
+
+
+# Movement states (separate for each direction)
+movement_state = {
+    'forward': False,
+    'backward': False,
+    'left': False,
+    'right': False,
+}
+
+
 
 # threads --------------------------------
 def webserver():
@@ -53,7 +77,115 @@ def cozmoconnect():
         print('camera enabled')
 
 
+
+
+
 # utils -------------------------------------
+
+
+# Placeholder functions for robot actions
+def move_forward():
+    movement_state['forward'] = True
+    print("Moving forward")
+
+def stop_forward():
+    movement_state['forward'] = False
+    print("Stopping forward movement")
+
+def move_left():
+    movement_state['left'] = True
+    print("Turning left")
+
+def stop_left():
+    movement_state['left'] = False
+    print("Stopping left turn")
+
+def move_backward():
+    movement_state['backward'] = True
+    print("Moving backward")
+
+def stop_backward():
+    movement_state['backward'] = False
+    print("Stopping backward movement")
+
+def move_right():
+    movement_state['right'] = True
+    print("Turning right")
+
+def stop_right():
+    movement_state['right'] = False
+    print("Stopping right turn")
+
+def lift_arm_up():
+    print("Lifting arm up")
+
+def lift_arm_down():
+    print("Lifting arm down")
+
+def look_up():
+    print("Looking up")
+
+def look_down():
+    print("Looking down")
+
+def stop_arm_movement():
+    print("Stopping arm movement")
+
+def stop_looking():
+    print("Stopping looking direction")
+
+
+# Function to handle actions when keys are pressed or released
+def handle_key_action(key, action):
+    match key:
+        case 'W':  # Move forward
+            if action == 'pressed' and not movement_state['forward']:
+                move_forward()
+            elif action == 'released':
+                stop_forward()
+        case 'A':  # Turn left
+            if action == 'pressed' and not movement_state['left']:
+                move_left()
+            elif action == 'released':
+                stop_left()
+        case 'S':  # Move backward
+            if action == 'pressed' and not movement_state['backward']:
+                move_backward()
+            elif action == 'released':
+                stop_backward()
+        case 'D':  # Turn right
+            if action == 'pressed' and not movement_state['right']:
+                move_right()
+            elif action == 'released':
+                stop_right()
+        case 'T':  # Lift arm up
+            if action == 'pressed' and not key_state[key]:
+                lift_arm_up()
+            elif action == 'released':
+                stop_arm_movement()
+        case 'G':  # Lift arm down
+            if action == 'pressed' and not key_state[key]:
+                lift_arm_down()
+            elif action == 'released':
+                stop_arm_movement()
+        case 'R':  # Look up
+            if action == 'pressed' and not key_state[key]:
+                look_up()
+            elif action == 'released':
+                stop_looking()
+        case 'F':  # Look down
+            if action == 'pressed' and not key_state[key]:
+                look_down()
+            elif action == 'released':
+                stop_looking()
+        case _:
+            print(f"Unknown key: {key}")
+
+
+
+
+
+# stream images
 def stream_images():
 
     timer = pycozmo.util.FPSTimer(14)
@@ -80,14 +212,41 @@ def stream_images():
 
 
 
+
+
 # flask routes ------------------------------------
+
+# video stream
 @app.route('/image')
 def stream():
     return Response(stream_images(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# index.html
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# keypress handler
+@app.route('/key-event', methods=['POST'])
+def key_event():
+    key = request.json.get('key')
+    action = request.json.get('action')  # 'pressed' or 'released'
+
+    if key in key_state:
+        # Only change the key state if it's different from the current state
+        if action == 'pressed' and not key_state[key]:
+            key_state[key] = True
+            # Handle the key action
+            handle_key_action(key, action)
+
+        elif action == 'released' and key_state[key]:
+            key_state[key] = False
+            # Handle the key release action
+            handle_key_action(key, action)
+
+    # You can also send back the current state of the keys if needed
+    return jsonify(key_state)
+
 
 
 # RUN THE THREADDSSSSS -------------------------------
@@ -95,4 +254,4 @@ if __name__ == "__main__":
      
      threading.Thread(target=webserver).start()
      threading.Thread(target=cozmoconnect).start()
-    #  threading.Thread(target=videostream).start()
+    #  threading.Thread(target=cozmodriver).start()

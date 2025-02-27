@@ -1,6 +1,68 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Control</title>
+    <script>
+        // This function will send the key press/release information to the Flask server
+        function sendKeyEvent(key, action) {
+            fetch('/key-event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    key: key,
+                    action: action
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Key State:', data);  // You can use this data to control the robot
+            });
+        }
+
+        // Add event listeners for key press and key release
+        document.addEventListener('keydown', function(event) {
+            // Only handle WASD, TG, RF keys
+            const validKeys = ['W', 'A', 'S', 'D', 'T', 'G', 'R', 'F'];
+            if (validKeys.includes(event.key.toUpperCase())) {
+                sendKeyEvent(event.key.toUpperCase(), 'pressed');
+            }
+        });
+
+        document.addEventListener('keyup', function(event) {
+            // Only handle WASD, TG, RF keys
+            const validKeys = ['W', 'A', 'S', 'D', 'T', 'G', 'R', 'F'];
+            if (validKeys.includes(event.key.toUpperCase())) {
+                sendKeyEvent(event.key.toUpperCase(), 'released');
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Control the Robot</h1>
+    <img src="/image" width="320" height="240" />
+    <p>Use the following keys to control the robot:</p>
+    <ul>
+        <li>W - Move forward</li>
+        <li>A - Move left</li>
+        <li>S - Move backward</li>
+        <li>D - Move right</li>
+        <li>T - Lift arm up</li>
+        <li>G - Lift arm down</li>
+        <li>R - Look up</li>
+        <li>F - Look down</li>
+    </ul>
+    <p>Press and release the keys to control the robot.</p>
+</body>
+</html>
+
+
+<!-- <html>
     <body>
         <h1>Live Image Stream</h1>
         <img src="/image" width="320" height="240" />
     </body>
-</html>
+</html> -->

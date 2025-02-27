@@ -50,6 +50,10 @@ movement_state = {
     'backward': False,
     'left': False,
     'right': False,
+    'look_up': False,
+    'look_down': False,
+    'lift_arm_up': False,
+    'lift_arm_down': False
 }
 
 
@@ -117,21 +121,29 @@ def stop_right():
     print("Stopping right turn")
 
 def lift_arm_up():
+    movement_state['lift_arm_up'] = True
     print("Lifting arm up")
 
 def lift_arm_down():
+    movement_state['lift_arm_down'] = True
     print("Lifting arm down")
 
 def look_up():
+    movement_state['look_up'] = True
     print("Looking up")
 
 def look_down():
+    movement_state['look_down'] = True
     print("Looking down")
 
 def stop_arm_movement():
+    movement_state['lift_arm_up'] = False
+    movement_state['lift_arm_down'] = False
     print("Stopping arm movement")
 
 def stop_looking():
+    movement_state['look_up'] = False
+    movement_state['look_down'] = False
     print("Stopping looking direction")
 
 
@@ -159,22 +171,22 @@ def handle_key_action(key, action):
             elif action == 'released':
                 stop_right()
         case 'T':  # Lift arm up
-            if action == 'pressed' and not key_state[key]:
+            if action == 'pressed' and not movement_state['lift_arm_up']:
                 lift_arm_up()
             elif action == 'released':
                 stop_arm_movement()
         case 'G':  # Lift arm down
-            if action == 'pressed' and not key_state[key]:
+            if action == 'pressed' and not movement_state['lift_arm_down']:
                 lift_arm_down()
             elif action == 'released':
                 stop_arm_movement()
         case 'R':  # Look up
-            if action == 'pressed' and not key_state[key]:
+            if action == 'pressed' and not movement_state['look_up']:
                 look_up()
             elif action == 'released':
                 stop_looking()
         case 'F':  # Look down
-            if action == 'pressed' and not key_state[key]:
+            if action == 'pressed' and not movement_state['look_down']:
                 look_down()
             elif action == 'released':
                 stop_looking()

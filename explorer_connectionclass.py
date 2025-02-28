@@ -6,6 +6,7 @@ import json
 import threading
 import io
 
+
 app = Flask(__name__)
 frame = None
 frameout = None
@@ -19,8 +20,10 @@ frameout = None
 # Last image, received from the robot.
 last_im = None
 
+class connection:
+    connection_client = pycozmo.Client()
+cli = None
 
-cli = pycozmo.Client()
 
 def on_camera_image(cli, new_im):
     """ Handle new images, coming from the robot. """
@@ -28,8 +31,8 @@ def on_camera_image(cli, new_im):
     last_im = new_im
     last_im
 
-connected = False
-# reconnect_request = False
+glob_connected = False
+reconnect_request = False
 # reconnect_event = threading.Event()
 
 # state trackers
@@ -78,39 +81,43 @@ def webserver():
 
 
 def cozmoconnect():     
-        global connected
+    global glob_connected, cli
+    # int_connected = glob_connected
+
+    # while glob_connected == False:
+        
+    time.sleep(1)
+    print("not connected is looping-------------------------------")
+    # def reconnect(reconnect_request):
+    # while True:
+    # if reconnect_request:
+        # del cli
+    cli = connection.connection_client
+    # if being called from reconnect_request:
+    
 
 
-        while not connected:
-            print("not connected is looping")
-            def reconnect(reconnect_request):
-                global connected
-                # if being called from reconnect_request:
-                if reconnect_request:
-                    cli.disconnect()
-                    cli.stop()
+    try:
+        cli.start()
+        cli.connect()
+        cli.wait_for_robot()
+        cli.set_head_angle(angle=0.6)
+        time.sleep(1)
+        print('head moved')
 
-                try:
-                    cli.start()
-                    cli.connect()
-                    cli.wait_for_robot()
-                    cli.set_head_angle(angle=0.6)
-                    time.sleep(1)
-                    print('head moved')
+        # Register to receive new camera images.
+        cli.add_handler(pycozmo.event.EvtNewRawCameraImage, on_camera_image)
 
-                    # Register to receive new camera images.
-                    cli.add_handler(pycozmo.event.EvtNewRawCameraImage, on_camera_image)
-
-                    # Enable camera.
-                    cli.enable_camera()
-                    print('camera enabled')
-                    connected = True
-
-                except Exception as ex:
-                    print('failed to connect')
-                    connected = False
-
-            reconnect(False)
+        # Enable camera.
+        cli.enable_camera()
+        print('camera enabled')
+        glob_connected = True
+        # break
+    except Exception as ex:
+        print('failed to connect')
+            # glob_connected = False
+        
+            # reconnect(False)
         
         
 
@@ -228,6 +235,35 @@ def stop_slow():
 
 
 
+
+def reconnect():
+    global cli, glob_connected, reconnect_request
+    try:
+        # cli.del_all_handlers()
+        # cli.enable_camera(False)
+        print('disconnect')
+        # cli.disconnect()
+        # cli.conn.send_thread.reset()
+        
+        reconnect_request = True
+        time.sleep(5)
+
+        threading.Thread(target=cozmoconnect).start()
+
+        # cli.stop()
+        print('connect')
+        # cli.connect()
+    except Exception as ex:
+        print(ex)
+    # time.sleep(5)
+    # print('cli deleted')
+    # del cli
+    # glob_connected = False
+    # print('connected set to false')
+
+
+
+
 # Function to handle actions when keys are pressed or released
 def handle_key_action(key, action):
     global connected
@@ -286,10 +322,7 @@ def handle_key_action(key, action):
         case 'CUSTOM_RECONNECT':
             print(key, action)
             key_state['CUSTOM_RECONNECT'] = False
-            cli.disconnect()
-            cli.stop()
-            time.sleep(5)
-            connected = False
+            reconnect()
         case _:
             print(f"Unknown key: {key}")
 
@@ -299,11 +332,11 @@ def handle_key_action(key, action):
 
 # stream images
 def stream_images():
-
+    global reconnect_request
     timer = pycozmo.util.FPSTimer(14)
 
     print('image loaded')
-    while True:
+    while not reconnect_request:
         # print('looping')
 
         if last_im:
@@ -318,6 +351,7 @@ def stream_images():
                 b'Content-Type: image/jpeg\r\n\r\n' + im_byte_array.read() + b'\r\n')
 
         timer.sleep()
+        reconnect_request = False
 
 
 
@@ -364,6 +398,17 @@ def key_event():
 # RUN THE THREADDSSSSS -------------------------------
 if __name__ == "__main__":
      
-     threading.Thread(target=webserver).start()
-     threading.Thread(target=cozmoconnect).start()
+    #  threading.Thread(target=webserver).start()
+    #  threading.Thread(target=webserver).join()
+    #  threading.Thread(target=cozmoconnect).start()
+    #  threading.Thread(target=cozmoconnect).join()
     #  threading.Thread(target=cozmodriver).start()
+    webserver_thread = threading.Thread(target=webserver)
+    cozmoconnect_thread = threading.Thread(target=cozmoconnect)
+
+    webserver_thread.start()
+    cozmoconnect_thread.start()
+
+    webserver_thread.join()
+    cozmoconnect_thread.join()
+

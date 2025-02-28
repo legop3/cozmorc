@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robot Control</title>
+    <title>Cozmo Control</title>
     <script>
         // This function will send the key press/release information to the Flask server
         function sendKeyEvent(key, action) {
@@ -39,11 +39,18 @@
                 sendKeyEvent(event.key.toUpperCase(), 'released');
             }
         });
+
+        function RequestReconnect() {
+            sendKeyEvent('CUSTOM_RECONNECT', 'pressed');
+            setTimeout(function(){
+                location.reload(true);
+            }, 3000);
+        };
     </script>
 </head>
 <body>
-    <h1>Control the Robot</h1>
-    <img src="/image" width="320" height="240" />
+    <!-- <h1>Control the Robot</h1> -->
+    <img src="/image" width="320" height="240" id="video"/>
     <p>Use the following keys to control the robot:</p>
     <ul>
         <li>W - Move forward</li>
@@ -56,6 +63,7 @@
         <li>F - Look down</li>
     </ul>
     <p>Press and release the keys to control the robot.</p>
+    <button onclick="RequestReconnect()">Reconnect to Cozmo</button>
 </body>
 </html>
 

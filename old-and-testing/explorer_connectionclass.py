@@ -22,6 +22,7 @@ last_im = None
 
 class connection:
     connection_client = pycozmo.Client()
+    pycozmo = pycozmo
 cli = None
 
 
@@ -81,7 +82,7 @@ def webserver():
 
 
 def cozmoconnect():     
-    global glob_connected, cli
+    global glob_connected, cli, reconnect_request
     # int_connected = glob_connected
 
     # while glob_connected == False:
@@ -98,8 +99,13 @@ def cozmoconnect():
 
 
     try:
-        cli.start()
-        cli.connect()
+        try:
+            # cli.start()
+            with pycozmo.connect() as cli:
+
+        except Exception as ex:
+            print(ex)
+        # pycozmo.connect()
         cli.wait_for_robot()
         cli.set_head_angle(angle=0.6)
         time.sleep(1)
@@ -112,9 +118,10 @@ def cozmoconnect():
         cli.enable_camera()
         print('camera enabled')
         glob_connected = True
+        reconnect_request = False
         # break
     except Exception as ex:
-        print('failed to connect')
+        print(ex)
             # glob_connected = False
         
             # reconnect(False)
@@ -337,7 +344,7 @@ def stream_images():
 
     print('image loaded')
     while not reconnect_request:
-        # print('looping')
+        print('looping', reconnect_request)
 
         if last_im:
             # Get last image.
@@ -351,7 +358,7 @@ def stream_images():
                 b'Content-Type: image/jpeg\r\n\r\n' + im_byte_array.read() + b'\r\n')
 
         timer.sleep()
-        reconnect_request = False
+        # reconnect_request = False
 
 
 

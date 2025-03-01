@@ -39,6 +39,60 @@ def movement_handler(cli):
     if disconnect_event.is_set():
         cli.disconnect()
         return
+    # print('handling movement frame')
+
+    # assign fast and slow modifiers
+    fast = False
+    slow = False
+
+    
+    if key_state['ENTER']: #move fast modifier
+        fast = True
+
+    if key_state['SHIFT']: #move slow modifier
+        slow = True
+
+    if key_state['R']: #move lift up
+        if fast:
+            cli.move_lift(10)
+        elif slow:
+            cli.move_lift(0.5)
+        else:
+            cli.move_lift(1.5)
+
+    if key_state['F']: #move lift down
+        if fast:
+            cli.move_lift(-10)
+        elif slow:
+            cli.move_lift(-0.5)
+        else:
+            cli.move_lift(-1.5)
+
+    if not key_state['R'] and not key_state['F']: #stop lift
+        cli.move_lift(0)
+
+    if key_state['T']: #move head up
+        if fast:
+            cli.move_head(10)
+        elif slow:
+            cli.move_head(0.5)
+        else:
+            cli.move_head(1.5)
+
+    if key_state['G']: #move head down
+        if fast:
+            cli.move_head(-10)
+        elif slow:
+            cli.move_head(-0.5)
+        else:
+            cli.move_head(-1.5)
+
+    if not key_state['T'] and not key_state['G']: #stop head
+        cli.move_head(0)
+
+    
+
+
 
 
 def handle_key_action(key, action):
@@ -51,38 +105,144 @@ def handle_key_action(key, action):
         key_state['CUSTOM_RECONNECT'] = False
 
 
+# def cozmo_controller():
+#     global disconnect_event, reconnect_event
+
+#     while True:
+#         if reconnect_event.is_set():
+#             reconnect_event.clear()
+#             disconnect_event.clear()  # Reset disconnect flag
+
+#         print("Connecting to Cozmo...")
+#         try:
+#             with pycozmo.connect() as cli:
+#                 print("Connected to Cozmo.")
+                
+#                 cli.add_handler(pycozmo.event.EvtNewRawCameraImage, on_camera_image)
+#                 cli.enable_camera()
+#                 cli.set_head_angle(pycozmo.MAX_HEAD_ANGLE.radians)
+#                 time.sleep(2)
+
+#                 while not disconnect_event.is_set():
+#                     movement_handler(cli)
+#                     time.sleep(0.05)
+
+#                 print("Disconnecting from Cozmo...")
+#                 cli.disconnect()
+#         except Exception as e:
+#             print(f"Error: {e}")
+
+#         print("Waiting for reconnection request...")
+#         while not reconnect_event.is_set():
+#             time.sleep(0.5)  # Wait for reconnect trigger
+
+
+
+# # Global threading events for managing connection states
+# disconnect_event = threading.Event()
+# reconnect_event = threading.Event()
+
+# def cozmo_controller():
+#     global disconnect_event, reconnect_event
+
+#     retry_delay = 1  # Initial delay before retrying (in seconds)
+#     max_delay = 30   # Maximum delay before retrying
+
+#     while True:
+#         if reconnect_event.is_set():
+#             reconnect_event.clear()
+#             disconnect_event.clear()  # Reset disconnect flag
+
+#         print("Attempting to connect to Cozmo...")
+
+#         try:
+#             with pycozmo.connect() as cli:
+#                 print("Connected to Cozmo.")
+
+#                 cli.add_handler(pycozmo.event.EvtNewRawCameraImage, on_camera_image)
+#                 cli.enable_camera()
+#                 cli.set_head_angle(pycozmo.MAX_HEAD_ANGLE.radians)
+#                 time.sleep(2)
+
+#                 retry_delay = 1  # Reset retry delay after successful connection
+
+#                 while not disconnect_event.is_set():
+#                     movement_handler(cli)
+#                     time.sleep(0.1)
+
+#                 print("Disconnecting from Cozmo...")
+#                 cli.disconnect()
+
+#         except Exception as e:
+#             print(f"Connection failed: {e}")
+#             print(f"Retrying in {retry_delay} seconds...")
+#             time.sleep(retry_delay)
+#             retry_delay = min(retry_delay * 2, max_delay)  # Exponential backoff
+
+#         print("Waiting for reconnection request...")
+#         while not reconnect_event.is_set():
+#             time.sleep(0.5)  # Wait for reconnect trigger
+
+# +_+_+_+_+_+_+_+_+_+_+_+_+_
+
+
+import pycozmo
+import threading
+import time
+
+connected_event = threading.Event()  # Tracks if Cozmo successfully connects
+
+def cozmo_thread():
+    """Function to run Cozmo connection inside a separate thread."""
+    global connected_event
+    try:
+        with pycozmo.connect() as cli:
+            print("Connected to Cozmo.")
+            connected_event.set()  # Mark successful connection
+
+            cli.add_handler(pycozmo.event.EvtNewRawCameraImage, on_camera_image)
+            cli.enable_camera()
+            cli.set_head_angle(pycozmo.MAX_HEAD_ANGLE.radians)
+            time.sleep(2)
+
+            while not disconnect_event.is_set():
+                movement_handler(cli)
+                time.sleep(0.1)
+
+            print("Disconnecting from Cozmo...")
+            cli.disconnect()
+            connected_event.clear()  # Reset when disconnected
+
+    except Exception as e:
+        print(f"Cozmo thread encountered an error: {e}")
+        connected_event.clear()  # Ensure we retry on failure
+
 def cozmo_controller():
-    global disconnect_event, reconnect_event
+    retry_delay = 1  # Initial delay before retrying
+    max_delay = 30   # Maximum retry delay
 
     while True:
-        if reconnect_event.is_set():
-            reconnect_event.clear()
-            disconnect_event.clear()  # Reset disconnect flag
+        print("Starting Cozmo connection thread...")
+        thread = threading.Thread(target=cozmo_thread, daemon=True)
+        thread.start()
 
-        print("Connecting to Cozmo...")
-        try:
-            with pycozmo.connect() as cli:
-                print("Connected to Cozmo.")
-                
-                cli.add_handler(pycozmo.event.EvtNewRawCameraImage, on_camera_image)
-                cli.enable_camera()
-                cli.set_head_angle(pycozmo.MAX_HEAD_ANGLE.radians)
-                time.sleep(2)
+        thread.join(timeout=15)  # Wait for connection (max 15 sec)
 
-                while not disconnect_event.is_set():
-                    movement_handler(cli)
-                    time.sleep(0.1)
+        if not connected_event.is_set():  # Only restart if it never connected
+            print("Cozmo connection failed or is stuck. Restarting thread...")
+            disconnect_event.set()  # Signal disconnect
+            thread.join()  # Ensure the thread stops before restarting
+            disconnect_event.clear()  # Reset for the next attempt
 
-                print("Disconnecting from Cozmo...")
-                cli.disconnect()
-        except Exception as e:
-            print(f"Error: {e}")
-
-        print("Waiting for reconnection request...")
-        while not reconnect_event.is_set():
-            time.sleep(0.5)  # Wait for reconnect trigger
+            print(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, max_delay)  # Exponential backoff
+        else:
+            print("Cozmo is connected and running. No need to restart.")
+            thread.join()  # Keep thread running normally
 
 
+# +_+_+_+_+_+_+_+_+_+_+_+_+_
 def stream_images():
     while not disconnect_event.is_set():
         timer = pycozmo.util.FPSTimer(14)

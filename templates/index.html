@@ -46,6 +46,10 @@
                 location.reload(true);
             }, 7000);
         };
+
+        function HeadlightToggle() {
+            sendKeyEvent('CUSTOM_HEADLIGHT', 'pressed')
+        }
     </script>
 </head>
 <body>
@@ -57,13 +61,16 @@
         <li>A - Move left</li>
         <li>S - Move backward</li>
         <li>D - Move right</li>
-        <li>T - Lift arm up</li>
-        <li>G - Lift arm down</li>
-        <li>R - Look up</li>
-        <li>F - Look down</li>
+        <li>R - Lift arm up</li>
+        <li>F - Lift arm down</li>
+        <li>T - Look up</li>
+        <li>G - Look down</li>
+        <li>ENTER - Go faster</li>
+        <li>SHIFT - Go slower</li>
     </ul>
     <p>Press and release the keys to control the robot.</p>
     <button onclick="RequestReconnect()">Reconnect to Cozmo</button>
+    <button onclick="HeadlightToggle()">Toggle Headlight</button>
 </body>
 </html>
 

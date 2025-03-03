@@ -142,7 +142,7 @@ def calculate_tread_speeds():
 
 
 def handle_key_action(key, action):
-    global disconnect_event, reconnect_event
+    global disconnect_event, reconnect_event, cli
 
     key_state[key] = action == 'pressed'
     
@@ -152,6 +152,16 @@ def handle_key_action(key, action):
         disconnect_event.set()  # Signal disconnection
         reconnect_event.set()  # Signal reconnection
         key_state['CUSTOM_RECONNECT'] = False
+    
+    if key == 'CUSTOM_HEADLIGHT' and action == 'pressed':
+        print("Headlight toggle requested")
+        try:
+            # cli.SetHeadLight(True)
+            cli.conn.send(pycozmo.protocol_encoder.SetHeadLight(True))
+        except Exception as ex:
+            print("headlight ex", ex)
+        key_state[key] = False
+
     execute_movement(key, action)
 
 
@@ -292,7 +302,7 @@ def cozmo_controller():
 # +_+_+_+_+_+_+_+_+_+_+_+_+_
 def stream_images():
     while not disconnect_event.is_set():
-        timer = pycozmo.util.FPSTimer(14)
+        timer = pycozmo.util.FPSTimer(20)
         if last_im:
             im_byte_array = io.BytesIO()
             last_im.save(im_byte_array, format='JPEG')

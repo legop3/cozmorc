@@ -35,74 +35,100 @@ def on_camera_image(cli, new_im):
     last_im = new_im
 
 
-def movement_handler(cli):
-    if disconnect_event.is_set():
-        cli.disconnect()
+# def movement_handler(cli):
+#     if disconnect_event.is_set():
+#         cli.disconnect()
+#         return
+#     # print('handling movement frame')
+
+#     # assign fast and slow modifiers
+#     fast = False
+#     slow = False
+
+    
+#     if key_state['ENTER']: #move fast modifier
+#         fast = True
+
+#     if key_state['SHIFT']: #move slow modifier
+#         slow = True
+
+#     if key_state['R']: #move lift up
+#         if fast:
+#             cli.move_lift(10)
+#         elif slow:
+#             cli.move_lift(0.5)
+#         else:
+#             cli.move_lift(1.5)
+
+#     if key_state['F']: #move lift down
+#         if fast:
+#             cli.move_lift(-10)
+#         elif slow:
+#             cli.move_lift(-0.5)
+#         else:
+#             cli.move_lift(-1.5)
+
+#     if not key_state['R'] and not key_state['F']: #stop lift
+#         cli.move_lift(0)
+
+#     if key_state['T']: #move head up
+#         if fast:
+#             cli.move_head(10)
+#         elif slow:
+#             cli.move_head(0.5)
+#         else:
+#             cli.move_head(1.5)
+
+#     if key_state['G']: #move head down
+#         if fast:
+#             cli.move_head(-10)
+#         elif slow:
+#             cli.move_head(-0.5)
+#         else:
+#             cli.move_head(-1.5)
+
+#     if not key_state['T'] and not key_state['G']: #stop head
+#         cli.move_head(0)
+
+    
+# Event-driven movement handler
+def execute_movement(key, action):
+    global cli
+    if not cli:
         return
-    # print('handling movement frame')
-
-    # assign fast and slow modifiers
-    fast = False
-    slow = False
-
+    print('execute movement', key, action)
+    fast = key_state.get('ENTER', False)
+    slow = key_state.get('SHIFT', False)
     
-    if key_state['ENTER']: #move fast modifier
-        fast = True
-
-    if key_state['SHIFT']: #move slow modifier
-        slow = True
-
-    if key_state['R']: #move lift up
-        if fast:
-            cli.move_lift(10)
-        elif slow:
-            cli.move_lift(0.5)
-        else:
-            cli.move_lift(1.5)
-
-    if key_state['F']: #move lift down
-        if fast:
-            cli.move_lift(-10)
-        elif slow:
-            cli.move_lift(-0.5)
-        else:
-            cli.move_lift(-1.5)
-
-    if not key_state['R'] and not key_state['F']: #stop lift
-        cli.move_lift(0)
-
-    if key_state['T']: #move head up
-        if fast:
-            cli.move_head(10)
-        elif slow:
-            cli.move_head(0.5)
-        else:
-            cli.move_head(1.5)
-
-    if key_state['G']: #move head down
-        if fast:
-            cli.move_head(-10)
-        elif slow:
-            cli.move_head(-0.5)
-        else:
-            cli.move_head(-1.5)
-
-    if not key_state['T'] and not key_state['G']: #stop head
-        cli.move_head(0)
-
-    
-
+    if action == 'pressed':
+        if key == 'R':  # Move lift up
+            cli.move_lift(10 if fast else 0.5 if slow else 1.5)
+        elif key == 'F':  # Move lift down
+            cli.move_lift(-10 if fast else -0.5 if slow else -1.5)
+        elif key == 'T':  # Move head up
+            cli.move_head(10 if fast else 0.5 if slow else 1.5)
+        elif key == 'G':  # Move head down
+            cli.move_head(-10 if fast else -0.5 if slow else -1.5)
+    elif action == 'released':
+        if key in ['R', 'F']:  # Stop lift
+            cli.move_lift(0)
+        elif key in ['T', 'G']:  # Stop head
+            cli.move_head(0)
 
 
 
 def handle_key_action(key, action):
     global disconnect_event, reconnect_event
 
+    key_state[key] = action == 'pressed'
+    
+
     if key == 'CUSTOM_RECONNECT' and action == 'pressed':
         print("Reconnection requested.")
         disconnect_event.set()  # Signal disconnection
         reconnect_event.set()  # Signal reconnection
         key_state['CUSTOM_RECONNECT'] = False
+    execute_movement(key, action)
 
 
 # def cozmo_controller():
@@ -186,15 +212,12 @@ def handle_key_action(key, action):
 # +_+_+_+_+_+_+_+_+_+_+_+_+_
 
 
-import pycozmo
-import threading
-import time
 
 connected_event = threading.Event()  # Tracks if Cozmo successfully connects
 
 def cozmo_thread():
     """Function to run Cozmo connection inside a separate thread."""
-    global connected_event
+    global cli, connected_event
     try:
         with pycozmo.connect() as cli:
             print("Connected to Cozmo.")
@@ -206,7 +229,7 @@ def cozmo_thread():
             time.sleep(2)
 
             while not disconnect_event.is_set():
-                movement_handler(cli)
+                # movement_handler(cli)
                 time.sleep(0.1)
 
             print("Disconnecting from Cozmo...")
@@ -277,13 +300,14 @@ def key_event():
     key = request.json.get('key')
     action = request.json.get('action')  # 'pressed' or 'released'
 
-    if key in key_state:
-        if action == 'pressed' and not key_state[key]:
-            key_state[key] = True
-            handle_key_action(key, action)
-        elif action == 'released' and key_state[key]:
-            key_state[key] = False
-            handle_key_action(key, action)
+    # if key in key_state:
+    #     if action == 'pressed' and not key_state[key]:
+    #         key_state[key] = True
+    #         handle_key_action(key, action)
+    #     elif action == 'released' and key_state[key]:
+    #         key_state[key] = False
+    #         handle_key_action(key, action)
+    handle_key_action(key, action)
 
     return jsonify(key_state)
 

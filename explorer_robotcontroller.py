@@ -257,8 +257,10 @@ def cozmo_thread():
             print("Connected to Cozmo.")
             connected_event.set()  # Mark successful connection
 
+            cli.conn.send(pycozmo.protocol_encoder.SetCameraParams(auto_exposure_enabled=True, gain=100, exposure_ms=10))
+
             cli.add_handler(pycozmo.event.EvtNewRawCameraImage, on_camera_image)
-            cli.enable_camera()
+            cli.enable_camera(color=True)
             cli.set_head_angle(pycozmo.MAX_HEAD_ANGLE.radians)
             time.sleep(2)
 
@@ -302,7 +304,7 @@ def cozmo_controller():
 # +_+_+_+_+_+_+_+_+_+_+_+_+_
 def stream_images():
     while not disconnect_event.is_set():
-        timer = pycozmo.util.FPSTimer(20)
+        timer = pycozmo.util.FPSTimer(30)
         if last_im:
             im_byte_array = io.BytesIO()
             last_im.save(im_byte_array, format='JPEG')

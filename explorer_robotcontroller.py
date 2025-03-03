@@ -90,15 +90,26 @@ def on_camera_image(cli, new_im):
 #     if not key_state['T'] and not key_state['G']: #stop head
 #         cli.move_head(0)
 
-    
+ 
 # Event-driven movement handler
 def execute_movement(key, action):
     global cli
     if not cli:
         return
-    print('execute movement', key, action)
+    
     fast = key_state.get('ENTER', False)
     slow = key_state.get('SHIFT', False)
+
+    if fast:
+        wheelspeedmod = 1
+    elif slow:
+        wheelspeedmod = 0.1
+    else:
+        wheelspeedmod = 0.5
+    
+    if key in ['W', 'A', 'S', 'D']:  # Handle movement keys
+        left_speed, right_speed = calculate_tread_speeds()
+        cli.drive_wheels(left_speed * pycozmo.MAX_WHEEL_SPEED.mmps * wheelspeedmod, right_speed * pycozmo.MAX_WHEEL_SPEED.mmps * wheelspeedmod)
     
     if action == 'pressed':
         if key == 'R':  # Move lift up
@@ -114,7 +125,20 @@ def execute_movement(key, action):
             cli.move_lift(0)
         elif key in ['T', 'G']:  # Stop head
             cli.move_head(0)
+        elif key in ['W', 'A', 'S', 'D']:  # Stop movement
+            left_speed, right_speed = calculate_tread_speeds()
+            cli.drive_wheels(left_speed * pycozmo.MAX_WHEEL_SPEED.mmps, right_speed * pycozmo.MAX_WHEEL_SPEED.mmps)
 
+
+# Function to calculate tank steering speeds
+def calculate_tread_speeds():
+    forward = key_state.get('W', False) - key_state.get('S', False)
+    turn = key_state.get('D', False) - key_state.get('A', False)
+    
+    left_speed = max(-1, min(1, forward - turn))
+    right_speed = max(-1, min(1, forward + turn))
+    
+    return left_speed, right_speed
 
 
 def handle_key_action(key, action):

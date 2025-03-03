@@ -127,7 +127,7 @@ def execute_movement(key, action):
             cli.move_head(0)
         elif key in ['W', 'A', 'S', 'D']:  # Stop movement
             left_speed, right_speed = calculate_tread_speeds()
-            cli.drive_wheels(left_speed * pycozmo.MAX_WHEEL_SPEED.mmps, right_speed * pycozmo.MAX_WHEEL_SPEED.mmps)
+            cli.drive_wheels(left_speed * pycozmo.MAX_WHEEL_SPEED.mmps * wheelspeedmod, right_speed * pycozmo.MAX_WHEEL_SPEED.mmps * wheelspeedmod)
 
 
 # Function to calculate tank steering speeds
@@ -135,8 +135,8 @@ def calculate_tread_speeds():
     forward = key_state.get('W', False) - key_state.get('S', False)
     turn = key_state.get('D', False) - key_state.get('A', False)
     
-    left_speed = max(-1, min(1, forward - turn))
-    right_speed = max(-1, min(1, forward + turn))
+    left_speed = max(-1, min(1, forward + turn))
+    right_speed = max(-1, min(1, forward - turn))
     
     return left_speed, right_speed
 
